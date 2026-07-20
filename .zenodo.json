@@ -1,0 +1,8 @@
+{
+  "title": "The World Model Remembers, the Actor Forgets: Dream Rehearsal for Continual Model-Based RL",
+  "description": "Code, pre-registration trail, and run data. DreamerV3-family agents forget catastrophically across task sequences, but the world model is not what forgets: representations, reward heads, and critics retain old-task knowledge while the actor collapses. Dream rehearsal - supervised self-imitation on the world model's own graded dreams - yields a task-label-free, parameter-constant continual learner: 3/3 retention on four- and eight-task MiniGrid chains where plain replay passes 0/3, outperforming matched real-episode cloning.",
+  "creators": [{"name": "Nijjer, Gurp", "affiliation": "Quantegra"}],
+  "license": "Apache-2.0",
+  "upload_type": "software",
+  "keywords": ["continual learning", "reinforcement learning", "world models", "DreamerV3", "catastrophic forgetting", "model-based RL", "self-imitation"]
+}

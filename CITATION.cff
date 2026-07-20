@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+title: "The World Model Remembers, the Actor Forgets: Dream Rehearsal for Continual Model-Based RL"
+message: "If you use this work, please cite it as below."
+authors:
+  - family-names: Nijjer
+    given-names: Gurp
+    affiliation: Quantegra
+license: Apache-2.0
+repository-code: "https://github.com/gurpnijjer/dream-rehearsal"
+date-released: 2026-07-20
