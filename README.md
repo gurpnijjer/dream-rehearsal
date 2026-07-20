@@ -59,6 +59,7 @@ DreamerV3). To reproduce:
   title={The World Model Remembers, the Actor Forgets: Dream Rehearsal for Continual Model-Based RL},
   author={Nijjer, Gurp},
   year={2026},
+  doi={10.5281/zenodo.21462836},
   note={https://github.com/gurpnijjer/dream-rehearsal}
 }
 ```
