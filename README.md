@@ -3,6 +3,8 @@
 
 **Gurp Nijjer** — [Quantegra](https://quantegra.ca)
 
+[![DOI](https://zenodo.org/badge/1307022956.svg)](https://zenodo.org/badge/latestdoi/1307022956)
+
 Code, pre-registration trail, and run data for the paper
 (*[paper/dream_rehearsal_paper.md](paper/dream_rehearsal_paper.md)*).
 
