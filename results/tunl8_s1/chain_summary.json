@@ -1,0 +1,150 @@
+{
+  "tasks": [
+    "minigrid_DoorKey-5x5",
+    "minigrid_SimpleCrossingS9N1",
+    "minigrid_LavaGapS5",
+    "minigrid_MultiRoom-N2-S4",
+    "minigrid_LavaCrossingS9N1",
+    "minigrid_DistShift2",
+    "minigrid_DoorKey-6x6",
+    "minigrid_Unlock"
+  ],
+  "seed": 1,
+  "bar": 0.6,
+  "phases": [
+    {
+      "phase": 0,
+      "task": "minigrid_DoorKey-5x5",
+      "steps_used": 14000,
+      "all_good": true,
+      "graduations": 1
+    },
+    {
+      "phase": 1,
+      "task": "minigrid_SimpleCrossingS9N1",
+      "steps_used": 26000,
+      "all_good": true,
+      "graduations": 1
+    },
+    {
+      "phase": 2,
+      "task": "minigrid_LavaGapS5",
+      "steps_used": 8000,
+      "all_good": true,
+      "graduations": 1
+    },
+    {
+      "phase": 3,
+      "task": "minigrid_MultiRoom-N2-S4",
+      "steps_used": 18000,
+      "all_good": true,
+      "graduations": 1
+    },
+    {
+      "phase": 4,
+      "task": "minigrid_LavaCrossingS9N1",
+      "steps_used": 8000,
+      "all_good": true,
+      "graduations": 1
+    },
+    {
+      "phase": 5,
+      "task": "minigrid_DistShift2",
+      "steps_used": 14000,
+      "all_good": true,
+      "graduations": 1
+    },
+    {
+      "phase": 6,
+      "task": "minigrid_DoorKey-6x6",
+      "steps_used": 4000,
+      "all_good": true,
+      "graduations": 1
+    },
+    {
+      "phase": 7,
+      "task": "minigrid_Unlock",
+      "steps_used": 8000,
+      "all_good": true,
+      "graduations": 1
+    }
+  ],
+  "final_retention": {
+    "minigrid_DoorKey-5x5": 0.9639999866485596,
+    "minigrid_SimpleCrossingS9N1": 0.9430555641651154,
+    "minigrid_LavaGapS5": 0.9474999805291494,
+    "minigrid_MultiRoom-N2-S4": 0.7589166641235351,
+    "minigrid_LavaCrossingS9N1": 0.8609259307384493,
+    "minigrid_DistShift2": 0.9604761858781178,
+    "minigrid_DoorKey-6x6": 0.9147499958674112,
+    "minigrid_Unlock": 0.8609375
+  },
+  "success_all_tasks": true,
+  "solve_stability": {
+    "minigrid_DoorKey-5x5": "49/50",
+    "minigrid_SimpleCrossingS9N1": "36/36",
+    "minigrid_LavaGapS5": "31/31",
+    "minigrid_MultiRoom-N2-S4": "21/21",
+    "minigrid_LavaCrossingS9N1": "13/16",
+    "minigrid_DistShift2": "8/8",
+    "minigrid_DoorKey-6x6": "5/5",
+    "minigrid_Unlock": "0/0"
+  },
+  "n_evals": 58,
+  "composite": false,
+  "final_retention_routed": null,
+  "success_all_tasks_routed": null,
+  "router_accuracy_final": null,
+  "router_accuracy_inphase": null,
+  "router_accuracy_final_by_task": null,
+  "router_accuracy_inphase_by_task": {},
+  "final_routed_rounds": null,
+  "arbitration_bandit": null,
+  "tunnel_rehearsal": true,
+  "rehearsal_updates": 50,
+  "rehearsal_bc_loss_curve": [
+    0.15126796945929527,
+    0.10782325029373169,
+    0.06108695864677429,
+    0.05577763050794601,
+    0.06167916387319565,
+    0.05684768006205559,
+    0.06267001457512379,
+    0.05683127216994763,
+    0.11903592139482498,
+    0.05336094196885824,
+    0.07535401433706283,
+    0.06346011087298394,
+    0.05073670670390129,
+    0.058458919804543256,
+    0.05865180894732475,
+    0.057684823237359524,
+    0.05715442944318056,
+    0.06749935825665791,
+    0.06609792945285638,
+    0.06124379922946294,
+    0.06456411915520827,
+    0.06424334081510703,
+    0.07666531831026077,
+    0.0629103629787763,
+    0.056085362310210864,
+    0.05919448492427667,
+    0.07447923798114062,
+    0.08319954680278897,
+    0.07381966512650251,
+    0.07338115492835641,
+    0.07260389904677868,
+    0.06588277637958527,
+    0.06561460991203785,
+    0.0654856622889638,
+    0.06337382631003857,
+    0.0685934674963355,
+    0.0644675852060318,
+    0.06643107292552788,
+    0.06237755220383406,
+    0.07679433054157665,
+    0.06494871673839434,
+    0.07576488489551203,
+    0.062036229542323525
+  ]
+}

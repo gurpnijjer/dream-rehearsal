@@ -1,0 +1,106 @@
+{
+  "tasks": [
+    "minigrid_DoorKey-5x5",
+    "minigrid_SimpleCrossingS9N1",
+    "minigrid_LavaGapS5",
+    "minigrid_MultiRoom-N2-S4"
+  ],
+  "seed": 2,
+  "bar": 0.6,
+  "phases": [
+    {
+      "phase": 0,
+      "task": "minigrid_DoorKey-5x5",
+      "steps_used": 12000,
+      "all_good": true,
+      "graduations": 1
+    },
+    {
+      "phase": 1,
+      "task": "minigrid_SimpleCrossingS9N1",
+      "steps_used": 32000,
+      "all_good": true,
+      "graduations": 1
+    },
+    {
+      "phase": 2,
+      "task": "minigrid_LavaGapS5",
+      "steps_used": 12000,
+      "all_good": true,
+      "graduations": 1
+    },
+    {
+      "phase": 3,
+      "task": "minigrid_MultiRoom-N2-S4",
+      "steps_used": 26000,
+      "all_good": true,
+      "graduations": 1
+    }
+  ],
+  "final_retention": {
+    "minigrid_DoorKey-5x5": 0.8608799874782562,
+    "minigrid_SimpleCrossingS9N1": 0.6778703699509303,
+    "minigrid_LavaGapS5": 0.9429999788602194,
+    "minigrid_MultiRoom-N2-S4": 0.6715833385785421
+  },
+  "success_all_tasks": true,
+  "solve_stability": {
+    "minigrid_DoorKey-5x5": "35/38",
+    "minigrid_SimpleCrossingS9N1": "18/21",
+    "minigrid_LavaGapS5": "14/14",
+    "minigrid_MultiRoom-N2-S4": "0/0"
+  },
+  "n_evals": 45,
+  "composite": false,
+  "final_retention_routed": null,
+  "success_all_tasks_routed": null,
+  "router_accuracy_final": null,
+  "router_accuracy_inphase": null,
+  "router_accuracy_final_by_task": null,
+  "router_accuracy_inphase_by_task": {},
+  "final_routed_rounds": null,
+  "arbitration_bandit": null,
+  "tunnel_rehearsal": true,
+  "rehearsal_source": "real_filtered",
+  "rehearsal_anchor": 0,
+  "rehearsal_updates": 50,
+  "rehearsal_bc_loss_curve": [
+    1.200742175579071,
+    0.7365210962295532,
+    0.7376153123378754,
+    0.6804470419883728,
+    0.6124612426757813,
+    0.5931869131326676,
+    0.5787920945882797,
+    0.5608769553899765,
+    0.50778260409832,
+    0.4869417953491211,
+    0.46986828923225404,
+    0.47105534732341764,
+    0.4275025877356529,
+    0.4447675195336342,
+    0.43539157032966613,
+    0.41867504954338075,
+    0.7102201387286187,
+    0.6023843011260033,
+    0.5682335010170937,
+    0.5334333288669586,
+    0.510730544924736,
+    0.491197871863842,
+    0.5900317666927973,
+    0.5606704864899318,
+    0.5386111882328987,
+    0.5197408326466878,
+    0.5076861168940862,
+    0.5037812616427739,
+    0.49712287694215773,
+    0.47788683146238325,
+    0.46814356903235116,
+    0.46306390980879464,
+    0.45194543570280077,
+    0.44899905075629554,
+    0.4454375233252843
+  ],
+  "reservoir": null,
+  "reservoir_final": null
+}

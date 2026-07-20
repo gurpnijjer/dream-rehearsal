@@ -1,0 +1,113 @@
+{
+  "tasks": [
+    "minigrid_DoorKey-5x5",
+    "minigrid_SimpleCrossingS9N1",
+    "minigrid_LavaGapS5",
+    "minigrid_MultiRoom-N2-S4"
+  ],
+  "seed": 1,
+  "bar": 0.6,
+  "phases": [
+    {
+      "phase": 0,
+      "task": "minigrid_DoorKey-5x5",
+      "steps_used": 14000,
+      "all_good": true,
+      "graduations": 1
+    },
+    {
+      "phase": 1,
+      "task": "minigrid_SimpleCrossingS9N1",
+      "steps_used": 34000,
+      "all_good": true,
+      "graduations": 1
+    },
+    {
+      "phase": 2,
+      "task": "minigrid_LavaGapS5",
+      "steps_used": 16000,
+      "all_good": true,
+      "graduations": 1
+    },
+    {
+      "phase": 3,
+      "task": "minigrid_MultiRoom-N2-S4",
+      "steps_used": 42000,
+      "all_good": true,
+      "graduations": 1
+    }
+  ],
+  "final_retention": {
+    "minigrid_DoorKey-5x5": 0.9602799852689108,
+    "minigrid_SimpleCrossingS9N1": 0.8679629584153493,
+    "minigrid_LavaGapS5": 0.8988666534423828,
+    "minigrid_MultiRoom-N2-S4": 0.750666665037473
+  },
+  "success_all_tasks": true,
+  "solve_stability": {
+    "minigrid_DoorKey-5x5": "48/49",
+    "minigrid_SimpleCrossingS9N1": "29/31",
+    "minigrid_LavaGapS5": "21/22",
+    "minigrid_MultiRoom-N2-S4": "0/0"
+  },
+  "n_evals": 57,
+  "composite": false,
+  "final_retention_routed": null,
+  "success_all_tasks_routed": null,
+  "router_accuracy_final": null,
+  "router_accuracy_inphase": null,
+  "router_accuracy_final_by_task": null,
+  "router_accuracy_inphase_by_task": {},
+  "final_routed_rounds": null,
+  "arbitration_bandit": null,
+  "tunnel_rehearsal": true,
+  "rehearsal_updates": 50,
+  "rehearsal_bc_loss_curve": [
+    0.10685149446129799,
+    0.15094332337379457,
+    0.05556910291314125,
+    0.06624171704053879,
+    0.04823511742055416,
+    0.05805573962628841,
+    0.06460757747292518,
+    0.06369219228625297,
+    0.051252480521798136,
+    0.05447500415146351,
+    0.047785430736839773,
+    0.05029604088515043,
+    0.05597790688276291,
+    0.04792437955737114,
+    0.04486074574291706,
+    0.05227386631071568,
+    0.04973078660666943,
+    0.077937230207026,
+    0.06890671871602536,
+    0.06851727837696671,
+    0.07343148473650217,
+    0.06705474942922592,
+    0.06389590788632632,
+    0.06993293011561036,
+    0.09998614452779293,
+    0.08204973173638185,
+    0.06836041613171498,
+    0.0690958938995997,
+    0.06124653977652391,
+    0.06291101512809595,
+    0.05912810509403547,
+    0.054975657388567925,
+    0.05701376147568226,
+    0.05974877489109834,
+    0.057742636340359844,
+    0.0533303888887167,
+    0.05310143669446309,
+    0.05327548059324423,
+    0.05903954391678174,
+    0.05409726320455472,
+    0.05549716266493002,
+    0.056729184774061046,
+    0.054435822827120624,
+    0.05291701552768548,
+    0.053525384354094666,
+    0.05183056761821111
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "tasks": [
+    "minigrid_DoorKey-5x5",
+    "minigrid_SimpleCrossingS9N1",
+    "minigrid_LavaGapS5",
+    "minigrid_MultiRoom-N2-S4"
+  ],
+  "seed": 3,
+  "bar": 0.6,
+  "phases": [
+    {
+      "phase": 0,
+      "task": "minigrid_DoorKey-5x5",
+      "steps_used": 10000,
+      "all_good": true
+    },
+    {
+      "phase": 1,
+      "task": "minigrid_SimpleCrossingS9N1",
+      "steps_used": 36000,
+      "all_good": true
+    },
+    {
+      "phase": 2,
+      "task": "minigrid_LavaGapS5",
+      "steps_used": 100000,
+      "all_good": false
+    },
+    {
+      "phase": 3,
+      "task": "minigrid_MultiRoom-N2-S4",
+      "steps_used": 100000,
+      "all_good": false
+    }
+  ],
+  "final_retention": {
+    "minigrid_DoorKey-5x5": 0.9620799859364828,
+    "minigrid_SimpleCrossingS9N1": 0.24740740458170574,
+    "minigrid_LavaGapS5": 0.9447999795277914,
+    "minigrid_MultiRoom-N2-S4": 0.8237499992052714
+  },
+  "success_all_tasks": false,
+  "solve_stability": {
+    "minigrid_DoorKey-5x5": "63/119",
+    "minigrid_SimpleCrossingS9N1": "15/100",
+    "minigrid_LavaGapS5": "26/50",
+    "minigrid_MultiRoom-N2-S4": "0/0"
+  },
+  "n_evals": 125
+}
