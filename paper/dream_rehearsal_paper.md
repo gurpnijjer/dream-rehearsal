@@ -1,8 +1,8 @@
 # The World Model Remembers, the Actor Forgets: Dream Rehearsal for Continual Model-Based RL
 
-**v1 full-prose draft, 2026-07-16; tunl8 3/3 and the DISTINCT ablation verdict filled
-2026-07-20. Sole remaining slot: https://github.com/gurpnijjer/dream-rehearsal. All numbers final, from banked
-pre-registered runs.**
+**Gurp Nijjer — Quantegra — July 2026**
+
+*Code, pre-registration trail, and run data: https://github.com/gurpnijjer/dream-rehearsal*
 
 ## Abstract
 
