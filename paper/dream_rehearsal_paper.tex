@@ -15,7 +15,7 @@
 
 \title{\bfseries The World Model Remembers, the Actor Forgets:\\
 Dream Rehearsal for Continual Model-Based RL}
-\author{Gurp Nijjer\\ Quantegra\\ \small\texttt{gurp@quantegra.ca}}
+\author{Gurp Nijjer\\ Quantegra Research, Canada\\ \small\texttt{gurp@quantegra.ca}}
 \date{July 2026}
 
 \begin{document}
@@ -33,7 +33,7 @@ collapses. Forgetting in this regime is a channel problem, not a memory problem.
 demonstrate this by intervention: with the world model frozen and identical imagined rollouts,
 reinforcement learning in imagination fails to recover a lost skill (0/3 seeds), while
 supervised self-imitation on the world model's own \emph{graded dreams} recovers it on 3/3
-seeds with zero environment interaction. Interleaved during training, this \emph{dream
+seeds with zero environment interaction. Interleaved during training, this \emph{graded dream
 rehearsal} yields a task-label-free, parameter-constant continual learner: 3/3 four-task
 chains retained where plain replay passes 0/3, 3/3 eight-task chains, and consistent gains
 over matched real-episode cloning (paired difference $+0.13$, bootstrap 95\% CI
@@ -77,6 +77,14 @@ regime, is not a memory problem. It is a channel problem: policy-gradient learni
 convert an intact signal into retained behavior, and we show a supervised channel converts
 the same signal successfully.
 
+A note on scope, stated here rather than left to the limitations: everything in this paper is
+established on MiniGrid chains with a 17M-parameter agent. We chose this scale deliberately ---
+it is the scale at which every component can be probed, frozen, checksummed, and re-read
+per-seed, which is what a localization claim requires. The contribution is the phenomenon, its
+component-level localization, and the mechanism that exploits it; whether the pattern persists
+in larger domains is an open empirical question we are actively pursuing and do not claim
+here.
+
 This paper makes four contributions, in decreasing order of claimed novelty:
 \begin{enumerate}\tightlist
 \item \textbf{A component-level localization of forgetting} in world-model agents (\S4):
@@ -87,7 +95,7 @@ reframes what needs fixing.
 imagined data, RL-in-imagination fails to recover a lost skill (0/3 seeds) where supervised
 self-imitation succeeds (3/3, zero environment steps). The instability is the
 policy-gradient channel itself.
-\item \textbf{Dream rehearsal} (\S6): interleaved supervised self-imitation on
+\item \textbf{Graded dream rehearsal} (\S6): interleaved supervised self-imitation on
 world-model-graded imagined rollouts of prior tasks during sequential training. One actor,
 no task labels at any time, no parameter growth, ${\sim}15\%$ compute overhead at four
 tasks. It converts the isolation upper bound into a mechanism --- 3/3 four-task and 3/3
@@ -114,9 +122,11 @@ WMAR~\cite{yang2024augmenting}, and ARROW~\cite{alyahya2026arrow} form the line 
 \S4 measures: a Dreamer-family agent whose world model trains on a retained (plain,
 augmented, or distribution-matched) replay buffer, with continual competence attributed to
 preserved world-model accuracy. Our plain-replay baseline is Continual-Dreamer's recipe at
-our scale. ARROW is the closest concurrent method in setting, with an orthogonal mechanism
-(distribution-matched \emph{real} replay for the world model); nothing in that line rehearses
-the \emph{actor} from imagination, which is precisely the component we find failing.
+our scale. ARROW is the closest concurrent method in setting, and it is orthogonal by our own
+localization: ARROW protects the world model's training distribution with distribution-matched
+\emph{real} replay, and \S4 shows that under never-clear replay the world model is already
+the protected component. The actor is the component that forgets, and no method in this line
+rehearses the actor from imagination.
 
 \textbf{Generative replay and pseudo-rehearsal.} Deep Generative
 Replay~\cite{shin2017continual} is the ancestral idea: train a generator of past data and
@@ -140,8 +150,11 @@ distinction rather than contradict it: in their regime no mechanism exists that 
 preserve anything (no world model, no dynamics objective, no retained data), and we observe
 total representation overwrite in exactly that condition (\S4.2, no-replay bracket). Our
 claim is regime-specific to replay-maintained world models --- the regime the continual-MBRL
-literature actually operates in. The plasticity and churn literature is mechanistically
-adjacent to \S5's channel finding but does not measure backward transfer.
+literature actually operates in. The plasticity literature --- capacity loss under nonstationarity~\cite{lyle2022understanding},
+primacy bias~\cite{nikishin2022primacy} --- documents degradation of the RL channel during
+ordinary training and is mechanistically adjacent to \S5's channel finding; it does not,
+however, measure backward transfer against an intact world model, which is the comparison our
+setting isolates.
 
 \textbf{Parameter isolation.} Frozen per-task modules with a task selector are the classical
 isolation approach; \S4.4 constructs the task-agnostic version (frozen actor snapshots plus
@@ -258,7 +271,9 @@ same budget (20k updates), zero new environment steps, real-environment evaluati
 imagination-only re-teaching; three seeds per arm, identical frozen world model and imagined
 data. Supervised self-imitation on graded dreams (blue) clears the 0.75 recovery bar on 3/3
 seeds within 2{,}000--7{,}500 updates; RL-in-imagination (orange) thrashes for 20{,}000
-updates and passes 0/3, with one seed collapsing to zero.}
+updates and passes 0/3, with one seed collapsing to zero. Returns are raw environment return
+in $[0,1]$; both arms use the same frozen world model and identical imagined data, so the
+failure of the orange arm is attributable to the RL channel alone.}
 \label{fig:recovery}
 \end{figure}
 
@@ -493,7 +508,7 @@ budget spreads over more tasks) as the expected failure mode, with a stability-w
 allocation rule as its remedy. No dilution is observed --- the incumbent quartet holds at or
 above its four-task band --- so the remedy is not triggered and we do not build it.
 
-\emph{Observation, explicitly not a result:} the historically doomed task reads higher at
+\emph{Uncontrolled observation, explicitly not a result:} the historically doomed task reads higher at
 eight tasks (0.943/0.919/0.876) than at four (0.868/0.751/0.825). We decline to interpret
 this: the gap between arm means is the same magnitude as the four-task arm's own
 seed-to-seed spread, the comparison crosses two different experiments (different downstream
@@ -511,7 +526,10 @@ MiniGrid scale; a 17M-parameter world model; one task ordering per chain length;
 rather than normalized scores (we additionally report retention relative to each task's own
 post-acquisition competence). $n{=}3$ with real run-level nondeterminism --- identical seeds
 can diverge qualitatively --- so we report dispersion and bar-distance, not only pass
-counts. Rehearsal cost grows linearly with task count; the observed acquisition speed-up
+counts. We acknowledge $n{=}3$ is below the 5--10 common at scale; single-workstation compute
+bounds it, and we compensate by reporting complete per-seed values for every headline
+comparison, several of which (\S5, \S6.2) show complete seed separation, which no
+aggregation can manufacture. Rehearsal cost grows linearly with task count; the observed acquisition speed-up
 offsets it at $n{=}8$, but the crossover point is unmeasured. The buffer retains raw
 experience: dream rehearsal removes stored \emph{policies}, not stored \emph{data} ---
 replacing rehearsal starts with generated or bounded starts is future work. Tasks that
@@ -573,6 +591,12 @@ deep generative replay.
 \emph{Advances in Neural Information Processing Systems (NeurIPS)}, 2017.
 \bibitem{hafner2023mastering} D.~Hafner, J.~Pasukonis, J.~Ba, and T.~Lillicrap.
 Mastering diverse domains through world models. arXiv:2301.04104, 2023.
+\bibitem{lyle2022understanding} C.~Lyle, M.~Rowland, and W.~Dabney. Understanding and
+preventing capacity loss in reinforcement learning.
+\emph{International Conference on Learning Representations (ICLR)}, 2022.
+\bibitem{nikishin2022primacy} E.~Nikishin, M.~Schwarzer, P.~D'Oro, P.-L.~Bacon, and
+A.~Courville. The primacy bias in deep reinforcement learning.
+\emph{International Conference on Machine Learning (ICML)}, 2022.
 \bibitem{chevalier2023minigrid} M.~Chevalier-Boisvert et al. Minigrid \& Miniworld: modular
 \& customizable reinforcement learning environments for goal-oriented tasks.
 \emph{NeurIPS Datasets and Benchmarks}, 2023.
@@ -625,5 +649,28 @@ paper --- plain-replay chains, freeze brackets, isolation-reference runs, recove
 both four-task rehearsal runs (initial and corrected scorer), the cloning-comparison arms,
 and the eight-task chains --- are included in the released repository under
 \texttt{results/}.
+
+\section{Candidate Mechanisms for the RL Channel's Instability}
+\label{app:mech}
+
+Section~5 establishes \emph{that} the policy-gradient channel fails where supervised
+imitation succeeds under identical conditions, not \emph{why}. We record the candidate
+explanations consistent with our observations, explicitly as untested hypotheses.
+\textbf{(1) Critic-optimism contamination.} \S7 documents that in imagination the critic's
+optimism is unconstrained by real outcomes (value promises outbid realized successes when
+scoring trajectories). The same optimism enters the actor--critic objective directly through
+the bootstrapped return, so the RL channel chases promises no realized dream validates ---
+consistent with the observed oscillation without convergence (one seed reaching 0.84 and
+returning to 0.38). The supervised channel's targets are realized actions of graded
+trajectories, with no bootstrap term. \textbf{(2) Update-magnitude interference.} One RL seed
+destroyed a co-trained task's behavior (0.08) through the shared actor; the supervised channel
+produced no collateral damage in any run. This is consistent with high-variance policy-gradient
+updates propagating broadly through shared parameters. \textbf{(3) Relation to plasticity
+findings.} Capacity loss~\cite{lyle2022understanding} and primacy
+bias~\cite{nikishin2022primacy} document RL-channel degradation under nonstationarity during
+ordinary training; our recovery setting shows failure even with a stationary, fully trained
+world model, isolating the channel from the representation. Adjudicating among these requires
+interventions we have not run --- variance clipping, critic-pessimism ablations, entropy
+schedules --- and we list them as the natural next experiments.
 
 \end{document}
