@@ -337,7 +337,7 @@ final retention in Table~\ref{tab:four}, method comparison in Figure~\ref{fig:re
 \small
 \begin{tabular}{lccccc}
 \toprule
-Seed & DoorKey & SimpleCrossing & LavaGap & MultiRoom & Env.\ steps \\
+Seed & DoorKey & SimpleCrossing & LavaGap & MultiRoom & Env.~steps \\
 \midrule
 1 & 0.959 & 0.905 & 0.760 & 0.814 & 136k \\
 2 & 0.956 & 0.740 & 0.662 & 0.806 & 244k \\
@@ -445,9 +445,11 @@ probability the dream has \emph{reached} step $t$ (so nothing counts past termin
 $r_t$ the predicted reward, and $V$ the critic. With discount $\gamma$ and horizon $H$:
 \begin{equation}
 \label{eq:score}
-\text{realized} = \sum_{t=0}^{H-1} \gamma^{t} p_t r_t, \qquad
-\text{score} = 10 \cdot \mathbf{1}[\text{realized} > 0.3] + \text{realized} +
-\gamma^{H} p_H V(s_H).
+\begin{aligned}
+\text{realized} &= \sum_{t=0}^{H-1} \gamma^{t}\, p_t\, r_t,\\
+\text{score} &= 10 \cdot \mathbf{1}[\text{realized} > 0.3] \;+\; \text{realized}
+\;+\; \gamma^{H} p_H V(s_H).
+\end{aligned}
 \end{equation}
 Trajectories that actually achieved reward in imagination outrank all value promises; the
 termination-aware score orders within groups. The principle is not new on real data --- it
@@ -473,8 +475,9 @@ solo within the phase budget; candidates that could not bootstrap under greedy e
 --- long-horizon sparse tasks --- were excluded and are reported as the acquisition frontier
 of this study): DoorKey-5x5 $\rightarrow$ SimpleCrossing $\rightarrow$ LavaGap
 $\rightarrow$ MultiRoom $\rightarrow$ LavaCrossing $\rightarrow$ DistShift2 $\rightarrow$
-DoorKey-6x6 $\rightarrow$ Unlock. Same recipe, same constants, one changed variable (task
-count). \textbf{All three seeds pass all eight tasks}, exceeding the pre-registered
+DoorKey-6x6 $\rightarrow$ Unlock. Same recipe, same constants; the only intentional change is task
+count, though task identity necessarily varies with chain length --- we claim robustness of
+the mechanism at doubled length, not a controlled scaling comparison. \textbf{All three seeds pass all eight tasks}, exceeding the pre-registered
 ${\geq}2/3$ bar (Table~\ref{tab:eight}).
 
 \begin{table}[h]
@@ -557,7 +560,7 @@ timestamped archives. All refuted hypotheses are reported. Code, run summaries, 
 artifacts, per-round evaluation traces, and the full pre-registration trail are available at
 \url{https://github.com/gurpnijjer/dream-rehearsal} (archived at
 \href{https://doi.org/10.5281/zenodo.21462836}{doi:10.5281/zenodo.21462836}). Total compute:
-a single NVIDIA GB10 workstation; the complete experimental record of this paper is
+a single NVIDIA GB10 (Grace--Blackwell) workstation; the complete experimental record of this paper is
 approximately three weeks of one GPU.
 
 \begin{thebibliography}{12}
