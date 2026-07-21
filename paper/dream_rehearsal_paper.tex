@@ -1,0 +1,295 @@
+\documentclass[10pt]{article}
+\usepackage[letterpaper,margin=1.1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{newtxtext,newtxmath}
+\usepackage{graphicx}
+\usepackage{booktabs,longtable,array,calc}
+\usepackage{microtype}
+\usepackage[hidelinks]{hyperref}
+\providecommand{\tightlist}{\setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setlength{\emergencystretch}{3em}
+
+\title{\bfseries The World Model Remembers, the Actor Forgets:\\
+Dream Rehearsal for Continual Model-Based RL}
+\author{Gurp Nijjer\\ Quantegra\\ \small\texttt{gurp@quantegra.ca}}
+\date{July 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Model-based reinforcement-learning agents in the DreamerV3 family forget catastrophically: trained on a sequence of tasks, they lose earlier policies almost completely, even when an unbounded replay buffer preserves every earlier experience. We ask a question the continual-RL literature has assumed an answer to but never measured: \emph{which component forgets?} Using pre-registered probes and interventions on four-task MiniGrid chains (n=3 seeds throughout), we find that under never-clear replay every measurable component of the world model retains old-task knowledge --- representations, reward predictions, and value estimates all remain intact (reward-head retention ratio $\approx$ 1.0, including on the degraded policy's own failure states) --- while the actor's behavior collapses regardless. The training signal inside the agent's imagination is intact; the policy-gradient channel that consumes it is what fails. We demonstrate this by intervention: with the world model frozen and identical imagined rollouts from replayed old-task states, re-teaching a lost skill by reinforcement learning in imagination fails on 3/3 seeds, while supervised self-imitation on the world model's own graded dreams recovers the skill on 3/3 seeds within 2,000--7,500 updates --- using zero environment interaction --- to performance above what frozen-policy storage delivers. Interleaving this \emph{dream rehearsal} during sequential training yields a task-label-free, parameter-constant continual learner: 3/3 four-task chains retained (hardest-task mean 0.82; 96\% of post-acquisition evaluations above bar) where plain replay passes 0/3 and a frozen-heads+router isolation reference passes 3/5 --- and holds across eight-task chains spanning six distinct task mechanics (3/3 seeds retain all eight, unanimously; per-task cross-seed agreement within \textasciitilde0.03), and outperforms matched competent-episode real-data cloning (paired difference +0.13, bootstrap 95\% CI {[}0.07, 0.24{]}, complete seed separation) --- imagination contributes beyond the supervised channel. We further show the dream-grading step is load-bearing and characterize its failure modes with an offline selection gauge: naive trajectory scoring is near-random on short-horizon tasks, and termination-aware corrections invert selection on long-horizon ones; a realized-first rule --- imitate only what actually succeeded in imagination, an imagination-safe form of the self-imitation advantage gate --- achieves selection AUC 1.0 on both task profiles and lifts the affected task's post-acquisition stability from 19--42\% to 67--100\%. All experiments were pre-registered with git-committed protocols before running; we report every refuted hypothesis, including two scoring bugs our own gauges caught before they contaminated results.
+\end{abstract}
+
+\vspace{0.5em}
+\noindent Code, pre-registration trail, and run data:
+\url{https://github.com/gurpnijjer/dream-rehearsal} \\
+Archived: \href{https://doi.org/10.5281/zenodo.21462836}{doi:10.5281/zenodo.21462836}
+
+\section{Introduction}\label{introduction}
+
+An agent that learns task B by destroying its competence at task A cannot learn continually, and reinforcement-learning agents do exactly this. The standard remedies treat the network as the thing to protect: regularize its parameters (EWC \cite{kirkpatrick2017overcoming} and successors), grow it (progressive networks \cite{rusu2016progressive}, per-task heads), or replay its past data (CLEAR \cite{rolnick2019experience}; reservoir buffers). In model-based RL, the replay remedy has a natural home --- the world model trains on buffered experience --- and the resulting recipe (a Dreamer-class agent with a never-clear buffer) is the field's current working answer \cite{kessler2023effectiveness,yang2024augmenting,alyahya2026arrow}.
+
+That line of work carries an assumption stated explicitly but, to our knowledge, never tested. WMAR: \emph{``We hypothesise that maintaining the world model's accuracy across different environments will help preserve performance.''} ARROW infers world-model fidelity backward from behavioral metrics. The premise --- protect the world model and the policy will follow --- has not been checked at the component level, because the standard evaluation measures only episodic return, which cannot distinguish a forgotten representation from a forgotten behavior.
+
+We checked. The first half of the premise is right: under never-clear replay the world model retains essentially everything we can measure about old tasks. The second half is wrong: the actor forgets anyway. The training signal for old tasks --- accurate rewards, calibrated values, intact dynamics over old-task states --- is present inside the agent's own imagination throughout training, and the policy decays regardless. Forgetting, in this regime, is not a memory problem. It is a channel problem: policy-gradient learning fails to convert an intact signal into retained behavior, and we show a supervised channel converts the same signal successfully.
+
+This paper makes four contributions, in decreasing order of claimed novelty:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \textbf{A component-level localization of forgetting} in world-model agents (\S3): representations, reward heads, and critics survive; only the actor's behavior decays. This contradicts the untested premise underlying replay-based continual MBRL and reframes what needs fixing.
+\item
+  \textbf{A channel isolation result} (\S4): with a frozen world model and identical imagined data, RL-in-imagination fails to recover a lost skill (0/3) where supervised self-imitation succeeds (3/3, zero environment steps). The instability is the policy-gradient channel.
+\item
+  \textbf{Dream rehearsal} (\S5): interleaving supervised self-imitation on world-model-graded imagined rollouts of prior tasks during sequential training. One actor, no task labels at any time, no parameter growth, \textasciitilde15\% compute overhead. It converts the isolation \emph{upper bound} into a \emph{mechanism}: 3/3 four-task chains and 3/3 eight-task chains, against 0/3 for the plain-replay recipe.
+\item
+  \textbf{The grader is load-bearing} (\S6): we characterize two failure modes of imagined-trajectory scoring (post-terminal contamination; promises outbidding realized successes), give a realized-first rule that closes both --- an imagination-safe port of the self-imitation advantage gate \cite{oh2018self} --- and introduce an offline gauge that measures selection quality directly, which caught both failure modes before they cost environment interaction.
+\end{enumerate}
+
+Everything was pre-registered before running (protocols, bars, and interpretation matrices git-committed; off-machine timestamped bundles), and we report the refuted hypotheses --- including two of our own scoring bugs --- in the main text, because the gauges that caught them are, we argue, part of the method.
+
+\section{Setup}\label{setup}
+
+\textbf{Agent.} DreamerV3~\cite{hafner2023mastering} (PyTorch implementation; 17M-parameter world model: CNN encoder, RSSM, reward/continuation/decoder heads; 1.8M-parameter actor; imagination horizon 15). Greedy exploration; all defaults from the reference MiniGrid configuration unless stated.
+
+\textbf{Tasks and chains.} MiniGrid~\cite{chevalier2023minigrid}, 64$\times$64 RGB observations. Core chain (all of \S\S3--6): DoorKey-5x5 $\rightarrow$ SimpleCrossingS9N1 $\rightarrow$ LavaGapS5 $\rightarrow$ MultiRoom-N2-S4 --- mixed episode horizons (\textasciitilde10 to \textasciitilde80 policy steps) and one lethal task, properties that turn out to matter (\S6). The scale-up chain (\S7) appends four audition-gated tasks: LavaCrossingS9N1, DistShift2, DoorKey-6x6, Unlock (eight tasks, six distinct mechanics, three lethal).
+
+\textbf{Protocol.} Sequential phases. During phase \emph{i} the agent acts only in task \emph{i}; a shared never-clear buffer accumulates all experience (the Continual-Dreamer recipe at our scale). Every 2,000 environment steps, every learned task is evaluated for 10 real-environment episodes. A phase advances when all learned tasks score $\geq$ 0.6 (mean return) for 3 consecutive evaluation rounds, or at a 150k-step cap. Final retention = last-3-round mean per task; a seed passes if all tasks finish $\geq$ 0.6. n=3 seeds everywhere; no per-seed tuning; every experiment's bars and interpretation matrix committed before launch. Because run-level nondeterminism is substantial (the same seed can produce qualitatively different trajectories), we report per-seed values and dispersion rather than pass counts alone.
+
+\section{Where forgetting lives}\label{where-forgetting-lives}
+
+\textbf{3.1 The phenomenon.} Two tasks, no replay: retention of task A after training B falls from 0.96 to 0.0 / 0.27 / 0.12 across seeds. Four tasks \emph{with} unbounded replay: 0/3 chains pass, and the casualty is the same task every seed --- SimpleCrossing retains 0.35 / 0.51 / 0.25 while DoorKey (\textasciitilde0.96), LavaGap (\textasciitilde0.94), and MultiRoom (0.79--0.82) survive. Replay protects some tasks and not others; whatever replay protects, it is not uniformly ``the policy.''
+
+\textbf{3.2 Freeze bracket (interventions).} Freezing the actor's weights at task-A competence while the world model continues training: retention 0.0 / 0.0 / 0.07 --- actor protection without representation stability is useless; the latent space moves under the frozen head. Freezing the world model instead: the new task never learns at all (B stuck at 0.0; the actor learns exclusively in imagination, and a frozen world model only dreams task A) --- one seed, terminated early as a foregone conclusion; we report it as direction-finding only. The bracket kills both naive protection strategies and sets up the real question: with replay keeping the world model trained on all tasks, what exactly is still being lost?
+
+\textbf{3.3 The world model retains everything we can measure.} We probed each component of the final chain checkpoint against every earlier phase checkpoint (deterministic posterior-mode encoding; n=3 seeds; all pre-registered with the prediction that the reward head would show selective forgetting --- a prediction the data refuted):
+
+\begin{itemize}
+\tightlist
+\item
+  \emph{Reward knowledge.} Discrimination D = (mean predicted reward at true success steps) -- (at zero-reward steps) on each task's held episodes. Retention ratio R = D(final)/D(own-phase) for the always-forgotten task T1: \textbf{0.99 / 1.06 / 1.01}. The reward head never forgets --- on one seed it \emph{improves} with continued replay.
+\item
+  \emph{Off-distribution check.} The same discrimination measured on the degraded policy's own final-era episodes --- the states a drifted actor actually visits, including outright failures: D = 0.87 (vs 0.90 on curated episodes), with \textbf{zero} false reward on failure trajectories. The signal is intact where re-teaching needs it, not just where replay polishes it.
+\item
+  \emph{Values.} Critic means on old-task states remain high and rise across phases (0.84 $\rightarrow$ 0.91).
+\item
+  \emph{Termination model.} Continuation-head discrimination at true terminal steps: 0.95--1.0 at every checkpoint, including immediately after the shortest task phase.
+\item
+  \emph{Representations, with a caveat that matters.} A frozen-action-margin probe shows old-task action preferences under re-encoded latents degrade (margin --0.25 at run end vs +4.5 and +2.7 for stabler tasks): the latent space \emph{does} drift. Precisely: \textbf{co-trained heads track the drift; frozen heads decay under it; and the actor --- co-trained but through the RL channel --- decays too.} ``The world model remembers'' means replay-maintained knowledge, not a frozen latent geometry.
+\end{itemize}
+
+An important scope note: this is \emph{replay-maintained} memory. Without replay, representation overwrite is total (\S3.2). Our claim is regime-specific and does not contradict findings that model-free fine-tuning irreversibly changes policy representations \cite{wolczyk2024fine} --- there, no mechanism exists that could preserve anything (no world model, no dynamics objective, no retained data). In the regime the continual-MBRL literature actually operates in, the premise ``the world model is what needs protecting'' has it backwards: the world model is the component that replay already protects.
+
+\textbf{3.4 The isolation reference.} For completeness we built the multi-head upper bound made task-agnostic: frozen per-task actor snapshots plus a nearest-centroid task router over encoder embeddings (no task labels at evaluation). With correct routing (measured \textasciitilde1.00 per-task offline), the oracle read passes 5/5 seeds --- but the honest routed read passes 3/5, entirely because the hardest task's \emph{stored} policy delivers only 0.62 $\pm$ 0.13 against a 0.6 bar; two seeds flipped verdicts in opposite directions between two reads of the same trained agent. Storing policies caps retention at snapshot quality and converts the pass/fail question into a coin flip at the bar. Isolation is a reference point, not a fix. (This experiment also surfaced an album-ordering bug in our router evaluation whose diagnosis --- an offline exact replication of the corrupted metric --- set the pattern for the gauges of \S6; the corrected re-read is the number reported here, with both reads in the artifact.)
+
+\section{The channel is the failure: recovery by dreams alone}\label{the-channel-is-the-failure-recovery-by-dreams-alone}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.85\linewidth]{fig1_recovery_race.pdf}
+\caption{\textbf{The recovery race} (\S4): real-environment return on the forgotten task
+during imagination-only re-teaching, three seeds per arm, identical frozen world model and
+imagined data. Supervised self-imitation on graded dreams (blue) clears the 0.75 recovery bar
+on 3/3 seeds within 2{,}000--7{,}500 updates; RL-in-imagination (orange) thrashes for 20{,}000
+updates and passes 0/3, with one seed collapsing to zero.}
+\label{fig:recovery}
+\end{figure}
+
+If \S3 is right, the actor should be re-teachable from the world model alone. We froze the entire final world model of each 4-task run (encoder, RSSM, all heads; parameter checksums asserted unchanged), selected the always-forgotten task's episodes from the buffer by phase window (selection purity gate $\geq$ 80\% verified by routing), and re-trained only the drifted live actor on imagined rollouts from those states. Two teachers, same starts, same budget (20k updates), zero new environment steps, real-environment evaluation every 500 updates:
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{RL-in-imagination} (standard DreamerV3 actor--critic update on the frozen model): \textbf{0/3.} One seed reaches 0.84 and oscillates back to 0.38; one collapses to 0.0 \emph{and destroys the collateral tasks' behavior} (a co-trained task falls to 0.08); one never exceeds 0.57.
+\item
+  \textbf{Dream self-imitation} (roll the current actor with sampling in imagination; grade each trajectory with the frozen reward and value heads; behavior-clone the top 25\%): \textbf{3/3}, at 2,000 / 3,500 / 7,500 updates --- 0.38$\rightarrow$0.85, 0.66$\rightarrow$0.92, 0.66$\rightarrow$0.85 --- above the frozen-head storage ceiling of \S3.4, with collateral tasks intact.
+\end{itemize}
+
+Same model, same knowledge, same dreams. The supervised channel converts the signal into behavior; the policy-gradient channel thrashes. This is the pre-registered arm-comparison's strongest row (``only imitation passes $\rightarrow$ the instability is the RL channel''), and it is why we frame forgetting in this regime as a channel problem. The world model is a sufficient behavioral memory at this scale; what was missing was a stable way to read behavior back out of it.
+
+\section{Dream rehearsal: prevention during the chain}\label{dream-rehearsal-prevention-during-the-chain}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.9\linewidth]{fig2_retention.pdf}
+\caption{\textbf{Final retention across the four-task chain} (\S5), three methods, per-seed
+points over bar means, pass bar 0.6. Plain never-clear replay (orange) holds the easy tasks but
+collapses on the hardest (SimpleCrossing, 0.37) --- 0/3 seeds pass all four. The frozen-heads+
+router isolation reference (green) passes 3/5. Dream rehearsal (blue) passes 3/3 with the
+hardest task at 0.82.}
+\label{fig:retention}
+\end{figure}
+
+The recovery result suggests the fix: never let the actor drift in the first place. After each task's phase ends, keep its buffered episodes as \emph{rehearsal starts}; from then on, after every 2,000 environment steps of new-task training, run 50 dream-self-imitation updates per prior task --- imagine from that task's states with the current (sampling) actor, grade each imagined trajectory with the live reward/continuation/value heads, and behavior-clone the top 25\%. One live actor throughout. No task labels at training or evaluation, no frozen policies, no router, no new parameters; the world model and critic train exactly as in the plain recipe. Rehearsal adds \textasciitilde15\% compute at four tasks (linear in task count).
+
+\textbf{Four-task result: 3/3 seeds pass all four tasks} (final retention; plain replay 0/3; isolation reference 3/5):
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1667}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Seed
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+DoorKey
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+SimpleCrossing
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+LavaGap
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+MultiRoom
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+total env steps
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+1 & 0.959 & 0.905 & 0.760 & 0.814 & 136k \\
+2 & 0.956 & 0.740 & 0.662 & 0.806 & 244k \\
+3 & 0.958 & 0.826 & 0.727 & 0.799 & 130k \\
+\end{longtable}
+}
+
+The historically doomed task (SimpleCrossing) averages \textbf{0.824} --- above the isolation ceiling's 0.62 $\pm$ 0.13 --- and stays above bar in \textbf{153/160 (96\%)} of all post-acquisition evaluations. Two of three seeds finish the whole chain \emph{faster} than the isolation architecture despite the rehearsal overhead, because no skill ever needs relearning: acquisition of later tasks accelerates (LavaGap learned in 8--10k steps in-chain on every seed). Retention converges to each task's own competence ceiling, not to a common value --- which is what ``not forgetting'' should look like.
+
+\emph{(The table above is the initial-scorer run; \S6's corrected grader lifts the one unstable task's stability from 27/19/42\% to 95/100/67\% with all-task passes preserved on all seeds --- final numbers used in Figure~\ref{fig:retention} are the corrected-run values: seed means 0.960/0.868/0.899/0.751, 0.961/0.751/0.944/0.800, 0.964/0.825/0.784/0.768.)}
+
+\textbf{Why dream at all?} The buffer already stores the real episodes, actions included; cloning them directly (CLEAR-style) is the obvious simpler alternative. We pre-registered this arm adversarially (two of four interpretation rows favor the simpler method; publication of the outcome in the main body was committed either way), with the strongest fair version: clone only \emph{competent} episodes (return \textgreater{} 0.05), matched update-for-update to the dream schedule. One methods note: our first implementation of the cloning arm silently mis-aligned features and actions by one step (the RSSM's action convention lags the actor's decision), which \emph{destroyed} skills while cloning their own successes --- a flattering artifact for our method, caught by an isolation gauge (clone a skill's own success; sound code must preserve it) and fixed before any comparison was read. With the corrected update:
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}lll@{}}
+\toprule\noalign{}
+T1 retention (per seed) & mean & all-four passes \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Dream rehearsal: 0.868 / 0.751 / 0.825 & \textbf{0.815} & 3/3 \\
+Real-BC (competent-filtered): 0.630 / 0.678 / 0.743 & 0.684 & 3/3 \\
+\end{longtable}
+}
+
+Real-episode cloning \emph{works} --- it clears every bar and is cheaper per update; we report it as a viable baseline. But it retains consistently less: paired difference \textbf{+0.131}, bootstrap 95\% CI \textbf{{[}0.073, 0.238{]}} (10k draws), meeting the pre-registered DISTINCT criterion (CI excludes zero, point $\geq$ 0.10) --- with complete seed separation (every dream seed exceeds every cloning seed). Imagination contributes beyond the supervised channel; the natural candidates are fresh on-policy state coverage from the current world model and the gradability of imagined data (\S6). The unfiltered cloning variant was not re-run after the bug fix: it clones a strict superset of the filtered arm's data plus pre-competence flailing, and cannot plausibly exceed the filtered arm it would need to beat; we disclose it as unrun.
+
+\section{The grader is load-bearing}\label{the-grader-is-load-bearing}
+
+One systematic wart survived the four-task result: the lethal short-episode task (LavaGap) wobbled after its phase --- above bar at the final read on all seeds, but only 27\% / 19\% / 42\% of its post-acquisition evaluations cleared the bar. Pre-registered probes (predictions committed, two of three refuted) convicted neither the rehearsal data (the task's library was the \emph{largest and most competent} of all tasks) nor the world model's physics (termination discrimination 0.95--1.0 from the earliest checkpoint), but the \textbf{scorer}: with \textasciitilde10-step episodes and a 15-step imagination horizon, \textbf{99.7\% of imagined trajectories terminate in-horizon}, and a naive score (discounted reward plus terminal value bootstrap) keeps scoring imagination \emph{past the dream's own ending} --- post-terminal latents the model never trained on. Selection was near-random on this task (AUC 0.49--0.56): 10--38\% of what rehearsal cloned were trajectories that walked into lava, ranked there by post-terminal bootstrap noise. On long-horizon tasks, where dreams rarely terminate in-horizon, the same scorer is clean --- which is exactly why only the short-horizon task wobbled.
+
+Fixing this exposed a second, opposite failure mode, caught \textbf{offline before any environment cost} by a selection gauge we now consider part of the method: generate sibling dreams from banked starts, label each by its own imagined outcome, and measure each candidate scorer's selection quality directly (AUC, top-quartile purity) rather than inferring it from returns. Survival-weighting the rewards (with or without the exact $\lambda$-return construction) \emph{inverts} selection on long-horizon tasks (AUC 0.004): a dream that actually reaches the goal has its terminal reward and bootstrap suppressed, while a dream that merely wanders keeps the critic's optimistic value --- promises outbid realized successes. A recovery-referee run confirmed the inversion behaviorally (flat 0.0 where the naive scorer had recovered the skill).
+
+The rule that closes both failure modes is \textbf{realized-first grading}: trajectories that actually achieved reward in imagination (reach-probability-weighted, so nothing counts past termination) outrank all value-promises; the termination-aware score orders within groups. This principle is not new on real data --- it is exactly the self-imitation advantage gate of Oh et al.~\cite{oh2018self}, (R -- V(s))$_{+}$: imitate only when realized return beats the critic's estimate. Our contribution is scoped to making it safe for imagination, where the critic's optimism is unconstrained by any real outcome and where dreams, unlike real episodes, do not stop at their own endings: the reach-probability weighting, the termination-aware bootstrap, and the offline gauge. On the gauge, realized-first scores AUC 1.0 / top-quartile purity 1.0 on both task profiles; in the recovery referee it passes at 2,000 updates (1.75$\times$ faster than the naive scorer); re-running the four-task chain with it lifts the wobbling task's stability to \textbf{95\% / 100\% / 67\%} with every guardrail held (all-four passes on all seeds; hardest-task mean 0.815). We note one adjacent null in the literature that our target distinction predicts: reward-\emph{weighted episode selection for world-model training} does not help and can cost plasticity \cite[app.~D.8]{kessler2023effectiveness}. Selecting which real episodes train the world model is a different object from selecting which imagined trajectories the actor clones; our gauge measures the latter directly.
+
+\section{Scale-up: eight tasks}\label{scale-up-eight-tasks}
+
+Doubling chain length with four audition-gated additional tasks (each verified to be learnable solo within the phase budget; candidates that could not bootstrap under greedy exploration --- long-horizon sparse tasks --- were excluded and are reported as the current acquisition frontier): DoorKey-5x5 $\rightarrow$ SimpleCrossing $\rightarrow$ LavaGap $\rightarrow$ MultiRoom $\rightarrow$ LavaCrossing $\rightarrow$ DistShift2 $\rightarrow$ DoorKey-6x6 $\rightarrow$ Unlock. Same recipe, same constants, one changed variable (task count).
+
+\textbf{All three seeds pass all eight tasks} --- unanimous, exceeding the pre-registered $\geq$2/3 bar:
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 16\tabcolsep) * \real{0.1111}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Seed
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+DoorKey5
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+SimpleX
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+LavaGap
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+MultiRoom
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+LavaCross
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+DistShift
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+DoorKey6
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Unlock
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+1 & 0.964 & 0.943 & 0.947 & 0.759 & 0.861 & 0.960 & 0.915 & 0.861 \\
+2 & 0.963 & 0.919 & 0.943 & 0.746 & 0.865 & 0.929 & 0.962 & 0.888 \\
+\end{longtable}
+}
+
+By the final phase, rehearsal runs 350 dream-imitation updates per 2,000-step chunk across seven prior tasks --- still one actor, still no task labels, still no added parameters.
+
+Two secondary reads matter more than the pass itself. \textbf{First, consistency:} the two seeds agree within \textasciitilde0.03 on six of eight tasks (max gap 0.047). The isolation reference of \S3.4 delivered 0.62 $\pm$ 0.13 on its hardest task at \emph{half} this chain length, with two seeds flipping verdicts between two reads of the same agent. At 2$\times$ the tasks, rehearsal is materially more stable than isolation was at 1$\times$.
+
+\textbf{Second, the predicted scale-failure did not appear.} We pre-registered rehearsal dilution (early tasks sagging as a fixed per-task budget spreads across more tasks) as the expected failure mode at increased chain length, with a stability-weighted allocator as its remedy. No dilution is observed: the incumbent quartet holds at or above its four-task band, so the allocator is not triggered and we do not build it.
+
+\emph{Observation, explicitly not a result:} the historically-doomed task reads higher at eight tasks (0.943 / 0.919) than at four (0.868 / 0.751 / 0.825). We decline to interpret this. The gap between the arm means (0.116) is the same magnitude as the four-task arm's own seed-to-seed spread (0.117), the comparison is across two different experiments (different downstream tasks, rehearsal-pass counts, and total budgets) with n=2 versus n=3, and no matched-budget control was run. It is a difference, not an effect, and it is recorded here only so that a future controlled test --- same chain, varying only the count of downstream tasks --- has a reason to exist.
+
+Retention again settles at each task's own ceiling rather than a common value (easy tasks \textasciitilde0.96; MultiRoom \textasciitilde0.75, its band in every chain we have run; LavaCrossing \textasciitilde0.86).
+
+\section{Related work}\label{related-work}
+
+Continual-Dreamer \cite{kessler2023effectiveness}, WMAR \cite{yang2024augmenting}, and ARROW \cite{alyahya2026arrow} form the replay-protected world-model line whose untested premise \S3 measures; our plain-replay control is Continual-Dreamer's recipe at our scale, and ARROW is the closest concurrent competitor on setting with an orthogonal mechanism (distribution-matched \emph{real} replay). ReGen \cite{govind2026world} (June 2026) is concurrent, structurally the closest to \S5's mechanism (world-model pseudo-replay + single policy trained by behavior cloning), in continual \emph{imitation} learning on a video-diffusion model with instruction-conditioned replay --- not task-agnostic and not RL; we cite it as convergent evidence for the mechanism family. Self-Imitation Learning \cite{oh2018self} is prior art for \S6's advantage gate on real data, which we say plainly. Deep Generative Replay \cite{shin2017continual}/pseudo-rehearsal is the ancestral idea; ours is imagination-native (no generator is trained --- the world model already in the loop is the generator) and grades rather than replays. Wolczyk et al.~\cite{wolczyk2024fine} (2024) is the apparent counter-evidence to \S3, resolved as a regime difference (model-free, no retained data --- nothing could preserve a representation). The plasticity/churn line is mechanistically adjacent to \S4's channel finding but never measure backward transfer; parameter-isolation methods are \S3.4's reference; CLEAR \cite{rolnick2019experience} is the real-data ancestor of the \S5 cloning comparison, now distinguished empirically (DISTINCT, complete seed separation) rather than rhetorically.
+
+\section{Limitations}\label{limitations}
+
+MiniGrid scale; a 17M-parameter world model; one task ordering per chain length; return bars rather than normalized scores (we additionally report retention relative to each task's own post-acquisition competence). n=3 with real run-level nondeterminism --- identical seeds can diverge qualitatively --- so we report dispersion and bar-distance, not only pass counts. Rehearsal cost grows linearly with task count; the observed acquisition speed-up offsets it at n=8, but the crossover point is unmeasured. The buffer retains raw experience: dream rehearsal removes stored \emph{policies}, not stored \emph{data} --- replacing rehearsal starts with generated starts is future work. Tasks that cannot bootstrap under greedy exploration within our budget mark the acquisition frontier of this study; nothing here addresses exploration. Two scoring bugs shipped during development and were caught by our own offline gauges before contaminating results; we report both (\S3.4, \S6) and draw the methodological conclusion that selection gauges belong in the method, not the appendix.
+
+\section{Reproducibility}\label{reproducibility}
+
+Every experiment was pre-registered: protocol, bars, and an interpretation matrix committed to git before launch (commit hashes in the artifact index), with off-machine timestamped bundles. All refuted hypotheses are reported. Code, run summaries, probe artifacts, per-round curves, and the full pre-registration trail are released at https://github.com/gurpnijjer/dream-rehearsal. Total compute: a single NVIDIA GB10 workstation; the complete experimental record of this paper is \textasciitilde3 weeks of one GPU.
+
+\begin{thebibliography}{12}
+\bibitem{kessler2023effectiveness} S.~Kessler, M.~Ostaszewski, M.~Bortkiewicz, M.~\.Zarski,
+M.~Wo\l{}czyk, J.~Parker-Holder, S.~J.~Roberts, and P.~Mi\l{}o\'s.
+The effectiveness of world models for continual reinforcement learning.
+\emph{Conference on Lifelong Learning Agents (CoLLAs)}, 2023. arXiv:2211.15944.
+\bibitem{yang2024augmenting} L.~Yang, L.~Kuhlmann, and G.~Kowadlo.
+Augmenting replay in world models for continual reinforcement learning. arXiv:2401.16650, 2024.
+\bibitem{alyahya2026arrow} A.~Alyahya, A.~Al~Siyabi, M.~R.~Ernst, L.~Yang, L.~Kuhlmann, and
+G.~Kowadlo. ARROW: Augmented replay for robust world models. arXiv:2603.11395, 2026.
+\bibitem{govind2026world} M.~K.~Govind, D.~Reilly, S.~Patel, H.~Le, and S.~Das.
+World action models enable continual imitation learning with recurrent generative replays.
+arXiv:2606.27374, 2026.
+\bibitem{oh2018self} J.~Oh, Y.~Guo, S.~Singh, and H.~Lee. Self-imitation learning.
+\emph{International Conference on Machine Learning (ICML)}, 2018.
+\bibitem{wolczyk2024fine} M.~Wo\l{}czyk, B.~Cupia\l{}, M.~Ostaszewski, M.~Bortkiewicz,
+M.~Zaj\k{a}c, R.~Pascanu, \L{}.~Kuci\'nski, and P.~Mi\l{}o\'s. Fine-tuning reinforcement
+learning models is secretly a forgetting mitigation problem.
+\emph{International Conference on Machine Learning (ICML)}, 2024.
+\bibitem{rolnick2019experience} D.~Rolnick, A.~Ahuja, J.~Schwarz, T.~Lillicrap, and G.~Wayne.
+Experience replay for continual learning.
+\emph{Advances in Neural Information Processing Systems (NeurIPS)}, 2019.
+\bibitem{kirkpatrick2017overcoming} J.~Kirkpatrick et al. Overcoming catastrophic forgetting
+in neural networks. \emph{PNAS}, 114(13), 2017.
+\bibitem{rusu2016progressive} A.~A.~Rusu et al. Progressive neural networks.
+arXiv:1606.04671, 2016.
+\bibitem{shin2017continual} H.~Shin, J.~K.~Lee, J.~Kim, and J.~Kim. Continual learning with
+deep generative replay.
+\emph{Advances in Neural Information Processing Systems (NeurIPS)}, 2017.
+\bibitem{hafner2023mastering} D.~Hafner, J.~Pasukonis, J.~Ba, and T.~Lillicrap.
+Mastering diverse domains through world models. arXiv:2301.04104, 2023.
+\bibitem{chevalier2023minigrid} M.~Chevalier-Boisvert et al. Minigrid \& Miniworld: modular \&
+customizable reinforcement learning environments for goal-oriented tasks.
+\emph{NeurIPS Datasets and Benchmarks}, 2023.
+\end{thebibliography}
+
+\end{document}
