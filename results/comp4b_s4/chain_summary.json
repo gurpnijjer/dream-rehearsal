@@ -1,0 +1,78 @@
+{
+  "tasks": [
+    "minigrid_DoorKey-5x5",
+    "minigrid_SimpleCrossingS9N1",
+    "minigrid_LavaGapS5",
+    "minigrid_MultiRoom-N2-S4"
+  ],
+  "seed": 4,
+  "bar": 0.6,
+  "phases": [
+    {
+      "phase": 0,
+      "task": "minigrid_DoorKey-5x5",
+      "steps_used": 30000,
+      "all_good": true
+    },
+    {
+      "phase": 1,
+      "task": "minigrid_SimpleCrossingS9N1",
+      "steps_used": 42000,
+      "all_good": true
+    },
+    {
+      "phase": 2,
+      "task": "minigrid_LavaGapS5",
+      "steps_used": 20000,
+      "all_good": true
+    },
+    {
+      "phase": 3,
+      "task": "minigrid_MultiRoom-N2-S4",
+      "steps_used": 54000,
+      "all_good": true
+    }
+  ],
+  "final_retention": {
+    "minigrid_DoorKey-5x5": 0.9618399858474732,
+    "minigrid_SimpleCrossingS9N1": 0.7435185174147287,
+    "minigrid_LavaGapS5": 0.9372999926408133,
+    "minigrid_MultiRoom-N2-S4": 0.7660833279291789
+  },
+  "success_all_tasks": true,
+  "solve_stability": {
+    "minigrid_DoorKey-5x5": "60/61",
+    "minigrid_SimpleCrossingS9N1": "30/39",
+    "minigrid_LavaGapS5": "28/28",
+    "minigrid_MultiRoom-N2-S4": "0/0"
+  },
+  "n_evals": 77,
+  "composite": true,
+  "final_retention_routed": {
+    "minigrid_DoorKey-5x5": 0.9624399860699971,
+    "minigrid_SimpleCrossingS9N1": 0.8005555550257366,
+    "minigrid_LavaGapS5": 0.9318999965985616,
+    "minigrid_MultiRoom-N2-S4": 0.7989999910195668
+  },
+  "success_all_tasks_routed": true,
+  "router_accuracy_final": 0.8125,
+  "router_accuracy_inphase": 0.8515625,
+  "arbitration_bandit": {
+    "0": {
+      "head": 0.961,
+      "live": 0.634
+    },
+    "1": {
+      "head": 0.724,
+      "live": 0.451
+    },
+    "2": {
+      "head": 0.926,
+      "live": 0.932
+    },
+    "3": {
+      "head": 0.822,
+      "live": 0.796
+    }
+  }
+}

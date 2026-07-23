@@ -1,0 +1,19 @@
+{
+  "seed": 1,
+  "task_a": "minigrid_DoorKey-5x5",
+  "task_b": "minigrid_SimpleCrossingS9N1",
+  "A_before": 0.9629199862480163,
+  "A_after": 0.0,
+  "forgetting_abs": 0.9629199862480163,
+  "retention_frac": 0.0,
+  "B_final": 0.3356481482585271,
+  "A_competent": true,
+  "baseline_margin": 6.143559455871582,
+  "final_margin": 1.8737131357192993,
+  "baseline_flip": 0.0,
+  "final_flip": 0.328125,
+  "baseline_wm_on_A": 0.10661745071411133,
+  "final_wm_on_A": 20.475725173950195,
+  "wm_on_A_ratio": 192.048532812946,
+  "n_b_evals": 6
+}

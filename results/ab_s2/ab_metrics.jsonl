@@ -1,0 +1,6 @@
+{"b_step": 0, "A_retention": 0.9657999873161316, "B_eval": 0.0, "margin_mean": 5.943285942077637, "margin_std": 1.314459204673767, "flip_fraction": 0.0, "wm_on_A_recon": 0.06947315484285355}
+{"b_step": 10000, "A_retention": 0.0, "B_eval": 0.0, "margin_mean": 3.079251289367676, "margin_std": 3.769609212875366, "flip_fraction": 0.203125, "wm_on_A_recon": 25.005130767822266}
+{"b_step": 20000, "A_retention": 0.0, "B_eval": 0.08083333373069763, "margin_mean": 4.275017738342285, "margin_std": 3.759833574295044, "flip_fraction": 0.177734375, "wm_on_A_recon": 26.185192108154297}
+{"b_step": 30000, "A_retention": 0.7106400012969971, "B_eval": 0.0, "margin_mean": 4.063024520874023, "margin_std": 3.5500364303588867, "flip_fraction": 0.142578125, "wm_on_A_recon": 26.357540130615234}
+{"b_step": 40000, "A_retention": 0.08660000264644623, "B_eval": 0.8447222232818603, "margin_mean": 3.7472383975982666, "margin_std": 4.078855514526367, "flip_fraction": 0.173828125, "wm_on_A_recon": 24.950618743896484}
+{"b_step": 50000, "A_retention": 0.0, "B_eval": 0.5680555582046509, "margin_mean": 1.795365810394287, "margin_std": 5.719939708709717, "flip_fraction": 0.373046875, "wm_on_A_recon": 22.654476165771484}

@@ -78,7 +78,7 @@ offline gauge that catches them before they cost training time).
 | [`paper/`](paper/) | The paper (PDF + LaTeX source) and figures |
 | [`src/`](src/) | Orchestrators, probes, the offline selection gauge, sweep scripts |
 | [`prereg/`](prereg/) | **The full pre-registration trail** — every protocol, bar, and interpretation matrix, committed before its experiment ran, including refuted hypotheses and both scoring bugs |
-| [`results/`](results/) | Per-run summaries and complete evaluation traces for every run in the paper |
+| [`results/`](results/) | **31 runs** — per-run summaries and complete evaluation traces for every experiment in the paper (see [`results/README.md`](results/README.md) for the run-to-section map) |
 | [`substrate/`](substrate/) | Environment wrapper + setup notes |
 
 **Every experiment was pre-registered before it ran.** Bars, arms, and interpretation matrices
