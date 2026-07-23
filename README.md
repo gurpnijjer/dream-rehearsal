@@ -1,59 +1,84 @@
 # The World Model Remembers, the Actor Forgets
-### Dream Rehearsal for Continual Model-Based RL
 
-**Gurp Nijjer** — [Quantegra](https://quantegra.ca)
+### Dream Rehearsal for Continual Model-Based RL
 
 [![arXiv](https://img.shields.io/badge/arXiv-2607.19749-b31b1b.svg)](https://arxiv.org/abs/2607.19749)
 [![DOI](https://zenodo.org/badge/1307022956.svg)](https://zenodo.org/badge/latestdoi/1307022956)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
-**Paper: [arXiv:2607.19749](https://arxiv.org/abs/2607.19749)**
+**When a reinforcement-learning agent "catastrophically forgets" a skill, we measured which
+part actually forgot. The answer: none of the memory.** The world model retains everything —
+reward structure, values, dynamics. Only the *behavior* decays. And a lost skill can be
+restored by having the agent imitate its own graded dreams, with **zero new environment
+interaction**.
 
-Code, pre-registration trail, and run data for the paper
-(*[paper/dream_rehearsal_paper.md](paper/dream_rehearsal_paper.md)*).
+<p align="center">
+  <img src="paper/figs/fig1_recovery_race.png" width="620"><br>
+  <sub><b>The recovery race.</b> Same frozen world model, same imagined data, two teachers.
+  Reinforcement learning in imagination (orange) fails on 3/3 seeds. Supervised imitation of
+  the model's own graded dreams (blue) recovers the lost skill on 3/3 — without touching the
+  environment. <i>The learning channel is what's broken, not the memory.</i></sub>
+</p>
 
-## TL;DR
+## Results
 
-DreamerV3-family agents forget catastrophically across task sequences — but **the world model
-isn't what forgets**. Under never-clear replay, representations, reward heads, and critics all
-retain old-task knowledge (reward-head retention ≈ 1.0); the actor's behavior collapses anyway.
-The failure is the policy-gradient *channel*, not the memory: with a frozen world model and
-identical imagined data, RL-in-imagination fails to re-teach a lost skill (0/3 seeds) while
-supervised self-imitation on the world model's own *graded dreams* recovers it (3/3, zero
-environment steps). Interleaving this **dream rehearsal** during training yields a
-task-label-free, parameter-constant continual learner: 3/3 retention on four-task chains and
-3/3 on eight-task chains where plain replay passes 0/3 — and it beats matched real-episode
-cloning (paired diff +0.13, 95% CI [0.07, 0.24], complete seed separation). The dream *grading*
-step is load-bearing; we characterize its failure modes and ship the offline gauge that caught
-two scoring bugs before they contaminated results.
+| | Plain replay | Frozen heads + router | **Dream rehearsal** |
+|---|---|---|---|
+| 4-task chains retained | 0 / 3 | 3 / 5 | **3 / 3** |
+| 8-task chains retained | — | — | **3 / 3** (unanimous) |
+| Hardest-task retention | 0.37 | 0.62 ± 0.13 | **0.82** |
+| Task labels needed | no | no | **no** |
+| Extra parameters | none | +1 policy per task | **none** |
 
-## Layout
+Dream rehearsal also outperforms matched real-episode cloning (paired difference **+0.13**,
+bootstrap 95% CI [0.07, 0.24], every dream seed above every cloning seed) — §6.2 of the paper
+gives the pre-registered comparison, including the bug we caught *in our own favour* and killed
+before reading any verdict.
 
-- `paper/` — the paper (markdown) + figures
-- `src/` — orchestrators, probes, gauges, sweep scripts (see Setup)
-- `prereg/` — the pre-registration trail: every protocol, bar, and interpretation matrix
-  git-committed before its experiment ran, including refuted hypotheses and two caught bugs
-- `substrate/` — the MiniGrid environment wrapper for the base repo
-- `results/` — per-run summaries and full evaluation traces (`chain_metrics.jsonl`) for every
-  run in the paper
+<p align="center">
+  <img src="paper/figs/fig2_retention.png" width="640"><br>
+  <sub>Final retention across the four-task chain; per-seed points over bar means.</sub>
+</p>
 
-## Setup
+## How it works
 
-Experiments run on [NM512/dreamerv3-torch](https://github.com/NM512/dreamerv3-torch) (PyTorch
-DreamerV3). To reproduce:
+Every 2,000 environment steps, while learning a new task, the agent:
 
-1. Clone `dreamerv3-torch`; install its requirements plus `minigrid` (gymnasium).
-2. Copy `substrate/minigrid_env.py` to `envs/minigrid.py`; register the `minigrid` suite in
-   `dreamer.py`'s `make_env` and add the `minigrid` config block (both shown in
-   `substrate/SETUP.md`).
-3. Drop `src/*` into the repo root.
-4. Example — the 4-task dream-rehearsal chain:
-   ```
-   python orchestrator_chain_nm512.py \
-     --tasks minigrid_DoorKey-5x5,minigrid_SimpleCrossingS9N1,minigrid_LavaGapS5,minigrid_MultiRoom-N2-S4 \
-     --tunnel_rehearsal --cont_grading --rehearsal_updates 50 \
-     --eval_every 2000 --phase_max_steps 150000 --logdir ./tunl4b_s1 --seed 1
-   ```
-   Hardware: every result in the paper was produced on a single NVIDIA GB10 box.
+1. **imagines** rollouts from prior-task states with its current policy,
+2. **grades** each imagined trajectory using its own world model — realized-first: dreams that
+   *actually achieved* reward outrank dreams that merely promise it,
+3. **imitates** the top 25%.
+
+One actor throughout. No task labels at any point, no stored policies, no router, no parameter
+growth, ~15% compute overhead. The grading step is where the difficulty lives — get it wrong
+and the agent imitates walking into lava (§7 characterizes two ways that happens, and ships the
+offline gauge that catches them before they cost training time).
+
+## What's in this repo
+
+| | |
+|---|---|
+| [`paper/`](paper/) | The paper (PDF + LaTeX source) and figures |
+| [`src/`](src/) | Orchestrators, probes, the offline selection gauge, sweep scripts |
+| [`prereg/`](prereg/) | **The full pre-registration trail** — every protocol, bar, and interpretation matrix, committed before its experiment ran, including refuted hypotheses and both scoring bugs |
+| [`results/`](results/) | Per-run summaries and complete evaluation traces for every run in the paper |
+| [`substrate/`](substrate/) | Environment wrapper + setup notes |
+
+**Every experiment was pre-registered before it ran.** Bars, arms, and interpretation matrices
+were committed to version control first; refuted hypotheses appear in the main text, not in a
+footnote. Total compute: one NVIDIA GB10 workstation, roughly three weeks.
+
+## Reproduce
+
+Runs on [NM512/dreamerv3-torch](https://github.com/NM512/dreamerv3-torch) — see
+[`substrate/SETUP.md`](substrate/SETUP.md) for the three-step install, then:
+
+```bash
+python orchestrator_chain_nm512.py \
+  --tasks minigrid_DoorKey-5x5,minigrid_SimpleCrossingS9N1,minigrid_LavaGapS5,minigrid_MultiRoom-N2-S4 \
+  --tunnel_rehearsal --cont_grading --rehearsal_updates 50 \
+  --eval_every 2000 --phase_max_steps 150000 --logdir ./tunl4b_s1 --seed 1
+```
 
 ## Citation
 
@@ -70,6 +95,7 @@ DreamerV3). To reproduce:
 }
 ```
 
-## License
+---
 
-Apache License 2.0 — see [LICENSE](LICENSE).
+**Gurp Nijjer** — [Quantegra Research](https://quantegra.ca) · Apache-2.0 ·
+[paper](https://arxiv.org/abs/2607.19749) · [archive](https://doi.org/10.5281/zenodo.21462836)
