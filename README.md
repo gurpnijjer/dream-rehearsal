@@ -41,6 +41,15 @@ retention):
 | 2 | 0.963 | 0.919 | 0.943 | 0.746 | 0.865 | 0.929 | 0.962 | 0.888 |
 | 3 | 0.901 | 0.876 | 0.942 | 0.754 | 0.794 | 0.959 | 0.962 | 0.740 |
 
+<p align="center">
+  <img src="paper/figs/fig3_eight_task.png" width="660"><br>
+  <sub>Eight-task chain: bar = cross-seed mean, dots = individual seeds, dashed line = pass
+  bar. No baseline arm is shown because none was run at this length — plain replay already
+  fails at four tasks. Generated directly from the released summaries in
+  <a href="results/">results/</a> by
+  <a href="paper/figs/make_fig3_eight.py">make_fig3_eight.py</a>.</sub>
+</p>
+
 By the final phase the agent runs 350 dream-imitation updates per 2,000-step chunk across
 seven prior tasks — still one actor, still no task labels, still no added parameters. The
 baselines were not run at eight tasks: plain replay already fails at four, so the comparison
