@@ -22,13 +22,30 @@ interaction**.
 
 ## Results
 
+**Four-task chains** (DoorKey-5x5 → SimpleCrossing → LavaGap → MultiRoom), n=3 seeds:
+
 | | Plain replay | Frozen heads + router | **Dream rehearsal** |
 |---|---|---|---|
-| 4-task chains retained | 0 / 3 | 3 / 5 | **3 / 3** |
-| 8-task chains retained | — | — | **3 / 3** (unanimous) |
+| Chains retained (all 4 tasks ≥ 0.6) | 0 / 3 | 3 / 5 | **3 / 3** |
 | Hardest-task retention | 0.37 | 0.62 ± 0.13 | **0.82** |
 | Task labels needed | no | no | **no** |
 | Extra parameters | none | +1 policy per task | **none** |
+
+**Eight-task chains** — same recipe, same constants, double the length.
+**All three seeds retain all eight tasks** (pass bar 0.6 on every task; per-seed final
+retention):
+
+| Seed | DoorKey5 | SimpleX | LavaGap | MultiRoom | LavaCross | DistShift | DoorKey6 | Unlock |
+|---|---|---|---|---|---|---|---|---|
+| 1 | 0.964 | 0.943 | 0.947 | 0.759 | 0.861 | 0.960 | 0.915 | 0.861 |
+| 2 | 0.963 | 0.919 | 0.943 | 0.746 | 0.865 | 0.929 | 0.962 | 0.888 |
+| 3 | 0.901 | 0.876 | 0.942 | 0.754 | 0.794 | 0.959 | 0.962 | 0.740 |
+
+By the final phase the agent runs 350 dream-imitation updates per 2,000-step chunk across
+seven prior tasks — still one actor, still no task labels, still no added parameters. The
+baselines were not run at eight tasks: plain replay already fails at four, so the comparison
+was made where it is informative (raw per-run data for every run above is in
+[`results/`](results/)).
 
 Dream rehearsal also outperforms matched real-episode cloning (paired difference **+0.13**,
 bootstrap 95% CI [0.07, 0.24], every dream seed above every cloning seed) — §6.2 of the paper
