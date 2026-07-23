@@ -3,7 +3,10 @@
 
 **Gurp Nijjer** — [Quantegra](https://quantegra.ca)
 
+[![arXiv](https://img.shields.io/badge/arXiv-2607.19749-b31b1b.svg)](https://arxiv.org/abs/2607.19749)
 [![DOI](https://zenodo.org/badge/1307022956.svg)](https://zenodo.org/badge/latestdoi/1307022956)
+
+**Paper: [arXiv:2607.19749](https://arxiv.org/abs/2607.19749)**
 
 Code, pre-registration trail, and run data for the paper
 (*[paper/dream_rehearsal_paper.md](paper/dream_rehearsal_paper.md)*).
@@ -59,6 +62,9 @@ DreamerV3). To reproduce:
   title={The World Model Remembers, the Actor Forgets: Dream Rehearsal for Continual Model-Based RL},
   author={Nijjer, Gurp},
   year={2026},
+  eprint={2607.19749},
+  archivePrefix={arXiv},
+  primaryClass={cs.LG},
   doi={10.5281/zenodo.21462836},
   note={https://github.com/gurpnijjer/dream-rehearsal}
 }
